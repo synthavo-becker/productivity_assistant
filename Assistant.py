@@ -2,15 +2,23 @@ import requests
 import json
 import win32clipboard
 import urllib.request
+from urllib.error import URLError
+import time
+from progress.bar import IncrementalBar
+import secret
 
-#blockid = "ce6dfa0443ea47a49c95066b0dbe3989"
-db_id = "326c3d22565c4473982d6f935e28cfff"
+
+"""
+Ýou need to have a file called "secret.py":
+
+db_id = "" #id of the db where you want to add the pages, in my case the todolist
+token = "" # Notion API token
+"""
 
 url = "https://api.notion.com/v1/pages"
-token = "secret_9ml5fh1fi8KEKffPhwRLfOMEbJldRrQp61LRVwZTDFo"
 
 headers = {
-    "Authorization": "Bearer " + token,
+    "Authorization": "Bearer " + secret.token,
     "Content-Type": "application/json",
     "Notion-Version": "2021-05-13"
 }
@@ -59,7 +67,7 @@ def parse_cards(data):
                     cards.append(current_card)
                 current_card = Card(row)
             else:
-                current_card.content = current_card.content + row
+                current_card.content = current_card.content + "<div>" + row + "</div>"
 
     cards.append(current_card)
     return cards
@@ -72,16 +80,20 @@ def request(action, **params):
 
 def invoke(action, **params):
     requestJson = json.dumps(request(action, **params)).encode('utf-8')
-    response = json.load(urllib.request.urlopen(urllib.request.Request('http://localhost:8765', requestJson)))
-    if len(response) != 2:
-        raise Exception('response has an unexpected number of fields')
-    if 'error' not in response:
-        raise Exception('response is missing required error field')
-    if 'result' not in response:
-        raise Exception('response is missing required result field')
-    if response['error'] is not None:
-        raise Exception(response['error'])
-    return response['result']
+    try:
+        response = json.load(urllib.request.urlopen(urllib.request.Request('http://localhost:8765', requestJson)))
+
+        if len(response) != 2:
+            raise Exception('response has an unexpected number of fields')
+        if 'error' not in response:
+            raise Exception('response is missing required error field')
+        if 'result' not in response:
+            raise Exception('response is missing required result field')
+        if response['error'] is not None:
+            raise Exception(response['error'])
+        return response['result']
+    except URLError:
+        print("ANKI NOT ONLINE !")
 
 def choose_deck(decks):
     
@@ -114,12 +126,24 @@ def create_card(deckname, front, back):
     }
     result = invoke(API_base["action"],  **API_base["params"])
 
+def create_cards(cards,decks,chosen_deck):
+    bar = IncrementalBar('Creating Cards...', max=len(cards))
+    for card in cards:
+        create_card(decks[chosen_deck], card.head, card.content)
+        bar.next()
+    bar.finish()
 
-def anki():
+def get_clipboard():
     win32clipboard.OpenClipboard()
     data = win32clipboard.GetClipboardData()
     win32clipboard.CloseClipboard()
+    return data
 
+
+
+
+def anki():
+    data = get_clipboard()
     data = data.split("\n") # split by line
 
     cards = parse_cards(data)
@@ -127,11 +151,14 @@ def anki():
     decks = invoke('deckNames') 
     chosen_deck = choose_deck(decks)
 
-    
-    for card in cards:
-        create_card(decks[chosen_deck], card.head, card.content)
+    create_cards(cards,decks,chosen_deck)
 
-    
+    while(True):
+        input("Press Enter to paste Clipboard again.")
+        data = get_clipboard()
+        data = data.split("\n")  # split by line
+        cards = parse_cards(data)
+        create_cards(cards, decks, chosen_deck)
 
 
 if __name__ =="__main__":
@@ -148,7 +175,7 @@ if __name__ =="__main__":
         else:
             chosen_status = status_todo
         data = {
-            "parent": { "database_id": db_id},
+            "parent": { "database_id": secret.db_id},
             "properties": {
                 "Name": {
                     "title": [
@@ -169,9 +196,9 @@ if __name__ =="__main__":
 
         response = requests.request("POST", url, headers=headers, data=data)
 
-        if(response.status_code != 200):
-            print(f"response: {response.status_code}")
-            print(response.text)
-            waiting = input()
+        #if(response.status_code != 200):
+            #print(f"response: {response.status_code}")
+            #print(response.text)
+            #waiting = input()
 
 
