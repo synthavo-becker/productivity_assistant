@@ -1,6 +1,8 @@
 from .secret import secret
 import json
+from PIL import Image
 import requests
+from io import BytesIO
 class picture_fetcher:
 
     
@@ -17,18 +19,50 @@ class picture_fetcher:
 
         self.loaded_subpage = None
     
-    def get_picture_of_block(self,row):
+    def get_picture_of_block(self,row,head_of_toggle):
         if self.has_loaded_semester:
             low = row.find("(") +1
             high = row.find(")")
             pic_url = row[low:high]
+            toggles = [y for y in self.loaded_subpage["results"] if(y["type"] =="toggle")]
+            
+            head_of_toggle_replaced = head_of_toggle.replace(" ","")
+            chosen_toggle = None #TODO add exception 
+            for toggle in toggles: 
+                if toggle["toggle"]["text"][0]["plain_text"].replace(" ","") in head_of_toggle_replaced: #does one of the toggles we iterate through has the head of the toggle we search ? 
+                    chosen_toggle = toggle
+                    break
 
-            #TODO you know have the subpage you want. This subpage has many toggle objects. You have to look if the text in the toggle matches, what you were searching for and only then fetch this toggle. 
-            # you have to adapt, so that this script knows the title of the toggle 
+            #now we have the toggle we were searching for. 
+            chosen_toggle_id = chosen_toggle["id"]
+            chosen_toggle_children = self.fetch_block(chosen_toggle_id) #this is whats inside the searched toggle. Here we have to search for the picture.
+            print("hi")
+            images_in_toggle = [y for y in chosen_toggle_children["results"] if(y["type"] == "image")] #all images in the toggle
+
+
+            # now we want to search for the given "pic_url" in the images of the toggle, to find the searched one. 
+            # we cut this url, because the beginning of the 2 url does not match each other. We will do the same operation on the other url. 
+            pic_url_cutted = pic_url[pic_url.find(".com"):] 
+            
+            found_url = None #TODO add exception 
+            for image in images_in_toggle: 
+                temp_url = image["image"]["file"]["url"]
+                temp_url_cutted = temp_url[temp_url.find(".com"):]#cut url, see comments below 
+
+                if pic_url_cutted in temp_url_cutted: 
+                    found_url = temp_url
+                    break
+
+            # now we have the url of the picture which we can really fetch. Look in the anki API, this can directly fetch the picture. 
+            #CONTINUE HERE 
+            
+
+            
+
 
         else:
             self.load_semester()
-            self.get_picture_of_block(row)
+            self.get_picture_of_block(row,head_of_toggle)
 
     # returns a json object, fetched from the notion api with the block id 
     def fetch_block(self, block_id):

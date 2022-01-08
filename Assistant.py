@@ -72,7 +72,7 @@ def parse_cards(data):
             
             else:
                 if start_of_picture_row in row:
-                    pic_fetcher.get_picture_of_block(row)
+                    pic_fetcher.get_picture_of_block(row,current_card.head)
                 current_card.content = current_card.content + "<div>" + row + "</div>"
 
     cards.append(current_card)
