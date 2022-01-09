@@ -1,12 +1,13 @@
 import requests
 import json
-import win32clipboard
+import pandas as pd
 import urllib.request
 from urllib.error import URLError
 import time
 from progress.bar import IncrementalBar
 from tools.picture_fetcher import picture_fetcher
 from tools.secret import secret
+
 
 
 """
@@ -45,12 +46,14 @@ status_today = {
     }
 
 
+
 class Card:
     def __init__(self, head):
         self.head = head
         self.content = ""
+        self.picture_links = []
     def __str__(self):
-        return(self.head + "\n" + self.content)
+        return(self.head + "\n" + self.content + "\n" + self.picture_links)
 
 
 
@@ -72,9 +75,10 @@ def parse_cards(data):
             
             else:
                 if start_of_picture_row in row:
-                    pic_fetcher.get_picture_of_block(row,current_card.head)
-                current_card.content = current_card.content + "<div>" + row + "</div>"
-
+                    pic_url = pic_fetcher.get_picture_url_of_block(row,current_card.head)
+                    current_card.picture_links.append(pic_url)
+                else:
+                    current_card.content = current_card.content + "<div>" + row + "</div>"
     cards.append(current_card)
     return cards
 
@@ -121,7 +125,26 @@ def choose_deck(decks):
     except: 
         return choose_deck(decks)
 
-def send_card_to_anki(deckname, front, back):
+def send_card_to_anki(deckname, front, back, pic_urls):
+    pictures = []
+    picture_base = {
+                "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/A_black_cat_named_Tilly.jpg/220px-A_black_cat_named_Tilly.jpg",
+                "filename": "black_cat.jpg",
+                "skipHash": "8d6e4646dfae812bf39651b59d7429ce",
+                "fields": [
+                    "Back"
+                ]
+            }
+    
+        
+    for pic_url in pic_urls:
+        base = picture_base
+        base[url] = pic_url
+        pictures.append(base)
+
+    
+        
+    
     API_base = {
         "action": "addNote",
         "version": 6,
@@ -141,7 +164,8 @@ def send_card_to_anki(deckname, front, back):
                         "checkChildren": False,
                         "checkAllModels": False
                     }
-                }
+                },
+                "picture" : pictures
             }
         }
     }
@@ -154,17 +178,11 @@ def create_all_cards(cards,decks,chosen_deck):
         bar.next()
     bar.finish()
 
-def get_clipboard():
-    win32clipboard.OpenClipboard()
-    data = win32clipboard.GetClipboardData()
-    win32clipboard.CloseClipboard()
-    return data
-
 
 
 
 def anki():
-    data = get_clipboard()
+    data = pd.read_clipboard()
     data = data.split("\n") # split by line
 
     cards = parse_cards(data)
@@ -183,6 +201,8 @@ def anki():
 
 
 if __name__ =="__main__":
+
+    
 
     text_in_Block = input()
     text_in_Block = text_in_Block.lower()

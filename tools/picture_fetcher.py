@@ -19,7 +19,7 @@ class picture_fetcher:
 
         self.loaded_subpage = None
     
-    def get_picture_of_block(self,row,head_of_toggle):
+    def get_picture_url_of_block(self,row,head_of_toggle):
         if self.has_loaded_semester:
             low = row.find("(") +1
             high = row.find(")")
@@ -62,7 +62,7 @@ class picture_fetcher:
 
         else:
             self.load_semester()
-            self.get_picture_of_block(row,head_of_toggle)
+            self.get_picture_url_of_block(row,head_of_toggle)
 
     # returns a json object, fetched from the notion api with the block id 
     def fetch_block(self, block_id):
