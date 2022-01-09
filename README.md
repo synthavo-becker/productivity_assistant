@@ -3,6 +3,7 @@
 Little Assistant i use for daily university tasks. 
 
 # Funcionalities
+![diagram](https://user-images.githubusercontent.com/82976744/148691672-5a597074-ee47-4fa3-8dd2-0b30db10f87c.jpg)
 
 ## Notion ToDo adding
 When opening the script and just entering some text that is !="anki" this text is added as a new page to the ToDo in Notion. 
