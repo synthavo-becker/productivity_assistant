@@ -22,6 +22,8 @@ In this case, "Semester 5" is the page refered to, in point 1. <br>
 The Page "IT-Security" is one example of a page that can be fetched.<br>
 On the right you see that "IT-Security" contains non-nested toggles.
 
+3. Anki has to be open during use of the script (due to AnkiConnect)
+
 
 
 # Funcionalities
