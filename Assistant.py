@@ -120,6 +120,15 @@ def create_card(deckname, front, back):
                 "fields": {
                     "Front": front,
                     "Back": back
+                },
+                "options": {
+                    "allowDuplicate": False,
+                    "duplicateScope": "deck",
+                    "duplicateScopeOptions": {
+                        "deckName": deckname,
+                        "checkChildren": False,
+                        "checkAllModels": False
+                    }
                 }
             }
         }
