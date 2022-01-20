@@ -14,9 +14,12 @@ import copy
 """
 Ýou need to have a file called "secret.py":
 
-db_id = "" #id of the db where you want to add the pages, in my case the todolist
-token = "" # Notion API token
+class secret():
+    db_id = "" #id of the db where you want to add the pages, in my case the todolist
+    token = "" # Notion API token
+    semester_page_id = ""#id of the Notion page from where you want the tool to search for pictures 
 """
+
 
 url = "https://api.notion.com/v1/pages"
 
