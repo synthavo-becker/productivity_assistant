@@ -3,10 +3,19 @@ import json
 from PIL import Image
 import requests
 from io import BytesIO
+
+class ToggleNotFoundError(Exception):
+        # Raised when the given Notion site does not contain the searched Toggle
+        pass
+
+class UrlNotFoundError(Exception):
+        # Raised when the given Toggle does not contain the searched Url
+        pass
+
 class picture_fetcher:
 
     
-
+    
 
     def __init__(self):
         self.has_loaded_semester = False
@@ -27,16 +36,18 @@ class picture_fetcher:
             toggles = [y for y in self.loaded_subpage["results"] if(y["type"] =="toggle")]
             
             head_of_toggle_replaced = head_of_toggle.replace(" ","")
-            chosen_toggle = None #TODO add exception 
+            chosen_toggle = None 
             for toggle in toggles: 
                 if toggle["toggle"]["text"][0]["plain_text"].replace(" ","") in head_of_toggle_replaced: #does one of the toggles we iterate through has the head of the toggle we search ? 
                     chosen_toggle = toggle
                     break
 
+            if chosen_toggle is None:
+                raise ToggleNotFoundError(f"We searched for the toggle head  '{head_of_toggle}' and did not found it in the Notion Site you gave. Make sure your Toggles are not nested in other blocks and you selected the right notion page.")
+
             #now we have the toggle we were searching for. 
             chosen_toggle_id = chosen_toggle["id"]
             chosen_toggle_children = self.fetch_block(chosen_toggle_id) #this is whats inside the searched toggle. Here we have to search for the picture.
-            print("hi")
             images_in_toggle = [y for y in chosen_toggle_children["results"] if(y["type"] == "image")] #all images in the toggle
 
 
@@ -53,16 +64,14 @@ class picture_fetcher:
                     found_url = temp_url
                     break
 
-            # now we have the url of the picture which we can really fetch. Look in the anki API, this can directly fetch the picture. 
-            #CONTINUE HERE 
-            
+            if found_url is None:
+                raise UrlNotFoundError(f"We did not found the right URL in the toggle '{head_of_toggle}'. Make sure that all toggles in one page have unique heads.")
 
-            
-
+            return found_url
 
         else:
             self.load_semester()
-            self.get_picture_url_of_block(row,head_of_toggle)
+            return self.get_picture_url_of_block(row,head_of_toggle)
 
     # returns a json object, fetched from the notion api with the block id 
     def fetch_block(self, block_id):
@@ -88,7 +97,7 @@ class picture_fetcher:
     
     def load_semester(self):
         json_semester = self.fetch_block(self.page_id)
-        print("Hi")
+
 
         semester_page = json_semester["results"]
         ids_of_subpages = [result["id"] for result in semester_page if (result["type"] =="child_page" )] #get all ids ob the subpages

@@ -7,7 +7,8 @@ import time
 from progress.bar import IncrementalBar
 from tools.picture_fetcher import picture_fetcher
 from tools.secret import secret
-
+import win32clipboard
+import copy
 
 
 """
@@ -57,10 +58,10 @@ class Card:
 
 
 
-def parse_cards(data):
+def parse_cards(data, pic_fetcher):
     cards = []
     start_of_picture_row = "![Untitled]"
-    pic_fetcher = picture_fetcher()
+    
     for counter, row in enumerate(data) :
         if row != '    \r' and row != '\r': # filter empty lines
             #print(repr(row))
@@ -113,7 +114,7 @@ def invoke(action, **params):
 
 def choose_deck(decks):
     
-    print("Choose deck:")
+    print("Choose ANKI deck:")
     for index, deck in enumerate(decks): print(f"{index}: {deck}")
     chosen_one = input()
     try:
@@ -129,8 +130,7 @@ def send_card_to_anki(deckname, front, back, pic_urls):
     pictures = []
     picture_base = {
                 "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/A_black_cat_named_Tilly.jpg/220px-A_black_cat_named_Tilly.jpg",
-                "filename": "black_cat.jpg",
-                "skipHash": "8d6e4646dfae812bf39651b59d7429ce",
+                "filename": "some_thing.jpg",
                 "fields": [
                     "Back"
                 ]
@@ -138,8 +138,9 @@ def send_card_to_anki(deckname, front, back, pic_urls):
     
         
     for pic_url in pic_urls:
-        base = picture_base
-        base[url] = pic_url
+        base = copy.deepcopy(picture_base)
+        base["url"] = pic_url
+        base["filename"] = str(hash(pic_url)) + ".jpg"
         pictures.append(base)
 
     
@@ -174,29 +175,35 @@ def send_card_to_anki(deckname, front, back, pic_urls):
 def create_all_cards(cards,decks,chosen_deck):
     bar = IncrementalBar('Creating Cards...', max=len(cards))
     for card in cards:
-        send_card_to_anki(decks[chosen_deck], card.head, card.content)
+        send_card_to_anki(decks[chosen_deck], card.head, card.content,card.picture_links)
         bar.next()
     bar.finish()
 
-
-
+def get_clipboard():
+    win32clipboard.OpenClipboard()
+    data = win32clipboard.GetClipboardData()
+    win32clipboard.CloseClipboard()
+    return data
 
 def anki():
-    data = pd.read_clipboard()
+    data = get_clipboard()
     data = data.split("\n") # split by line
 
-    cards = parse_cards(data)
+    pic_fetcher = picture_fetcher()
+    cards = parse_cards(data,pic_fetcher)
 
     decks = invoke('deckNames') 
     chosen_deck = choose_deck(decks)
 
     create_all_cards(cards,decks,chosen_deck)
 
+    
+
     while(True):
         input("Press Enter to paste Clipboard again.")
         data = get_clipboard()
         data = data.split("\n")  # split by line
-        cards = parse_cards(data)
+        cards = parse_cards(data,pic_fetcher)
         create_all_cards(cards, decks, chosen_deck)
 
 
