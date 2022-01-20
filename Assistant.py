@@ -12,7 +12,7 @@ import copy
 
 
 """
-Ýou need to have a file called "secret.py":
+Ýou need to have a file called "secret.py" in the tools folder:
 
 class secret():
     db_id = "" #id of the db where you want to add the pages, in my case the todolist
