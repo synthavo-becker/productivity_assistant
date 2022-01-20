@@ -1,11 +1,14 @@
 import requests
 import json
-import win32clipboard
+import pandas as pd
 import urllib.request
 from urllib.error import URLError
 import time
 from progress.bar import IncrementalBar
-import secret
+from tools.picture_fetcher import picture_fetcher
+from tools.secret import secret
+import win32clipboard
+import copy
 
 
 """
@@ -44,17 +47,21 @@ status_today = {
     }
 
 
+
 class Card:
     def __init__(self, head):
         self.head = head
         self.content = ""
+        self.picture_links = []
     def __str__(self):
-        return(self.head + "\n" + self.content)
+        return(self.head + "\n" + self.content + "\n" + self.picture_links)
 
 
 
-def parse_cards(data):
+def parse_cards(data, pic_fetcher):
     cards = []
+    start_of_picture_row = "![Untitled]"
+    
     for counter, row in enumerate(data) :
         if row != '    \r' and row != '\r': # filter empty lines
             #print(repr(row))
@@ -66,12 +73,22 @@ def parse_cards(data):
                 if counter != 0:
                     cards.append(current_card)
                 current_card = Card(row)
+            
             else:
-                current_card.content = current_card.content + "<div>" + row + "</div>"
-
+                if start_of_picture_row in row:
+                    pic_url = pic_fetcher.get_picture_url_of_block(row,current_card.head)
+                    current_card.picture_links.append(pic_url)
+                else:
+                    current_card.content = current_card.content + "<div>" + row + "</div>"
     cards.append(current_card)
     return cards
 
+
+
+
+
+    
+    
 
 
 
@@ -97,19 +114,38 @@ def invoke(action, **params):
 
 def choose_deck(decks):
     
-    print("Choose deck:")
+    print("Choose ANKI deck:")
     for index, deck in enumerate(decks): print(f"{index}: {deck}")
     chosen_one = input()
     try:
         ret = int(chosen_one)
         if ret >= len(decks) or ret < 0 :
-            return choose_deck
+            return choose_deck(decks)
         else: 
             return ret 
     except: 
-        return choose_deck
+        return choose_deck(decks)
 
-def create_card(deckname, front, back):
+def send_card_to_anki(deckname, front, back, pic_urls):
+    pictures = []
+    picture_base = {
+                "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/A_black_cat_named_Tilly.jpg/220px-A_black_cat_named_Tilly.jpg",
+                "filename": "some_thing.jpg",
+                "fields": [
+                    "Back"
+                ]
+            }
+    
+        
+    for pic_url in pic_urls:
+        base = copy.deepcopy(picture_base)
+        base["url"] = pic_url
+        base["filename"] = str(hash(pic_url)) + ".jpg"
+        pictures.append(base)
+
+    
+        
+    
     API_base = {
         "action": "addNote",
         "version": 6,
@@ -129,16 +165,17 @@ def create_card(deckname, front, back):
                         "checkChildren": False,
                         "checkAllModels": False
                     }
-                }
+                },
+                "picture" : pictures
             }
         }
     }
     result = invoke(API_base["action"],  **API_base["params"])
 
-def create_cards(cards,decks,chosen_deck):
+def create_all_cards(cards,decks,chosen_deck):
     bar = IncrementalBar('Creating Cards...', max=len(cards))
     for card in cards:
-        create_card(decks[chosen_deck], card.head, card.content)
+        send_card_to_anki(decks[chosen_deck], card.head, card.content,card.picture_links)
         bar.next()
     bar.finish()
 
@@ -148,29 +185,31 @@ def get_clipboard():
     win32clipboard.CloseClipboard()
     return data
 
-
-
-
 def anki():
     data = get_clipboard()
     data = data.split("\n") # split by line
 
-    cards = parse_cards(data)
+    pic_fetcher = picture_fetcher()
+    cards = parse_cards(data,pic_fetcher)
 
     decks = invoke('deckNames') 
     chosen_deck = choose_deck(decks)
 
-    create_cards(cards,decks,chosen_deck)
+    create_all_cards(cards,decks,chosen_deck)
+
+    
 
     while(True):
         input("Press Enter to paste Clipboard again.")
         data = get_clipboard()
         data = data.split("\n")  # split by line
-        cards = parse_cards(data)
-        create_cards(cards, decks, chosen_deck)
+        cards = parse_cards(data,pic_fetcher)
+        create_all_cards(cards, decks, chosen_deck)
 
 
 if __name__ =="__main__":
+
+    
 
     text_in_Block = input()
     text_in_Block = text_in_Block.lower()
