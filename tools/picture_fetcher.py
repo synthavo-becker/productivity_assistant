@@ -4,6 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 
+
 class ToggleNotFoundError(Exception):
         # Raised when the given Notion site does not contain the searched Toggle
         pass
@@ -74,13 +75,20 @@ class picture_fetcher:
             return self.get_picture_url_of_block(row,head_of_toggle)
 
     # returns a json object, fetched from the notion api with the block id 
-    def fetch_block(self, block_id):
+    def fetch_block(self, block_id, next_cursor= None):
         url = f"https://api.notion.com/v1/blocks/{block_id}/children"
-        response = requests.request("GET", url, headers=self.headers)
+
+        if(next_cursor is None):
+            response = requests.request("GET", url, headers=self.headers)
+        else:
+            data = {'filter': {}, 'start_cursor' : str(next_cursor)}
+            response = response = requests.request("GET", url, headers=self.headers, params = data)
+            print("hi")
+            #TODO hier ist der fehler. du übermittelst den next_cursor noch nicht richtig 
         return json.loads(response.text)
         
 
-    #returns an int corresponding to the index of the chosen subpage 
+    #returns an int corresponding to the index of the chosen subpage -> user input
     def choose_subpage(self,names_of_subpages):
         print("Choose Notion Subpage:")
 
@@ -94,6 +102,38 @@ class picture_fetcher:
                 return ret 
         except: 
             return self.choose_subpage(names_of_subpages)
+
+    def fetch_all_toggles(self, page_id):
+     
+        self.loaded_subpage = self.fetch_block(page_id)
+        try:
+            has_more_pages = self.loaded_subpage["has_more"]
+
+            if(has_more_pages):
+                next_cursor = self.loaded_subpage["next_cursor"]
+                additional_pages = self.handle_pagination(page_id, next_cursor)
+                self.loaded_subpage["results"].extend(additional_pages)
+                print("Jhi")
+        except KeyError as err:
+            pass
+        
+
+
+    def handle_pagination(self,page_id, next_cursor, results = []):
+        page = self.fetch_block(page_id, next_cursor=next_cursor)
+        results.extend(page["results"])
+        try:
+            has_more_pages = page["has_more"]
+
+            if(has_more_pages):
+                next_cursor = page["next_cursor"]
+                results.extend(self.handle_pagination(page_id, next_cursor, results = results))
+                print("JO")
+            return results
+        except KeyError as err:
+            print("JO")
+            return results
+
     
     def load_semester(self):
         json_semester = self.fetch_block(self.page_id)
@@ -103,8 +143,12 @@ class picture_fetcher:
         ids_of_subpages = [result["id"] for result in semester_page if (result["type"] =="child_page" )] #get all ids ob the subpages
         names_of_subpages = [result["child_page"]["title"] for result in semester_page if (result["type"] =="child_page" )] #get all ids ob the subpages 
 
-        choosen_subpage_index = self.choose_subpage(names_of_subpages)        
-        self.loaded_subpage = self.fetch_block(ids_of_subpages[choosen_subpage_index]) #here we now have the real subpage we want. 
+        choosen_subpage_index = self.choose_subpage(names_of_subpages)
+        chosen_id_of_subpage = ids_of_subpages[choosen_subpage_index]
+    
+        self.fetch_all_toggles(chosen_id_of_subpage)#here we now have the real subpage we want.
+        
+      
         
 
         self.has_loaded_semester = True
