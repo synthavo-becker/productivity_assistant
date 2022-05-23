@@ -14,10 +14,7 @@ import copy
 """
 Ýou need to have a file called "secret.py" in the tools folder:
 
-class secret():
-    db_id = "" #id of the db where you want to add the pages, in my case the todolist
-    token = "" # Notion API token
-    semester_page_id = ""#id of the Notion page from where you want the tool to search for pictures 
+jo
 """
 
 
@@ -220,15 +217,19 @@ if __name__ =="__main__":
     if text_in_Block.startswith("anki"): #anki mode
         anki()
     else: #notion mode, default 
-        if text_in_Block.startswith("td") or text_in_Block.startswith("today"):
-            text_in_Block = text_in_Block[2:len(text_in_Block)]
-            chosen_status = status_today
-        else:
-            chosen_status = status_todo
+        status = {
+            'id': '%5EOE%40', 
+            'type': 'select', 
+            'select': {
+                'id': '1',
+                'name': 'To Do', 
+                'color': 'green'
+            }
+        }
         data = {
             "parent": { "database_id": secret.db_id},
             "properties": {
-                "Name": {
+                "Task": {
                     "title": [
                         {
                             "text":{
@@ -237,7 +238,7 @@ if __name__ =="__main__":
                         }
                     ]
                 },
-                "Status": chosen_status
+                "Kategorie": status
             }
 
         }
@@ -251,5 +252,7 @@ if __name__ =="__main__":
             #print(f"response: {response.status_code}")
             #print(response.text)
             #waiting = input()
+
+        print(response)
 
 
