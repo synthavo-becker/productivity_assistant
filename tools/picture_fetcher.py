@@ -39,7 +39,8 @@ class picture_fetcher:
             head_of_toggle_replaced = head_of_toggle.replace(" ","")
             chosen_toggle = None 
             for toggle in toggles: 
-                if toggle["toggle"]["text"][0]["plain_text"].replace(" ","") in head_of_toggle_replaced: #does one of the toggles we iterate through has the head of the toggle we search ? 
+                current_toggle_replaced = toggle["toggle"]["text"][0]["plain_text"].replace(" ","")
+                if  current_toggle_replaced == head_of_toggle_replaced or (current_toggle_replaced  + "\r") == head_of_toggle_replaced: #does one of the toggles we iterate through has the head of the toggle we search ? 
                     chosen_toggle = toggle
                     break
 
@@ -59,6 +60,7 @@ class picture_fetcher:
             found_url = None #TODO add exception 
             for image in images_in_toggle: 
                 temp_url = image["image"]["file"]["url"]
+                print(temp_url)
                 temp_url_cutted = temp_url[temp_url.find(".com"):]#cut url, see comments below 
 
                 if pic_url_cutted in temp_url_cutted: 
