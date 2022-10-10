@@ -7,7 +7,7 @@ import time
 from progress.bar import IncrementalBar
 from tools.picture_fetcher import picture_fetcher
 from tools.secret import secret
-import win32clipboard
+import clipboard
 import copy
 
 
@@ -180,10 +180,7 @@ def create_all_cards(cards,decks,chosen_deck):
     bar.finish()
 
 def get_clipboard():
-    win32clipboard.OpenClipboard()
-    data = win32clipboard.GetClipboardData()
-    win32clipboard.CloseClipboard()
-    return data
+    return clipboard.paste()
 
 def anki():
     data = get_clipboard()
