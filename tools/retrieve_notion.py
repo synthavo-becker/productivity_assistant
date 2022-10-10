@@ -17,7 +17,7 @@ page_id = '20dd09ced3ca4aef93a58673d1d7a0cb'
 #url = f"https://api.notion.com/v1/pages/{page_id}" #for pageid
 url = f"https://api.notion.com/v1/blocks/{page_id}/children" #for blockid
 
-token = "secret_9ml5fh1fi8KEKffPhwRLfOMEbJldRrQp61LRVwZTDFo"
+token = ""
 
 headers = {
     "Authorization": "Bearer " + token,
