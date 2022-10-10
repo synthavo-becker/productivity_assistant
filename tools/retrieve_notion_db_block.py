@@ -6,7 +6,7 @@ database_id = "326c3d22565c4473982d6f935e28cfff"
 url = f"https://api.notion.com/v1/databases/{database_id}/query"
 
 payload = {"page_size": 200}
-token = "secret_9ml5fh1fi8KEKffPhwRLfOMEbJldRrQp61LRVwZTDFo"
+token = ""
 headers = {
     "Accept": "application/json",
     "Authorization": "Bearer " + token,
