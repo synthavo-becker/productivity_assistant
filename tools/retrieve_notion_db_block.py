@@ -1,12 +1,13 @@
 import requests
 import json 
+import secret
 
-database_id = "326c3d22565c4473982d6f935e28cfff"
+database_id = secret.db_id
 
 url = f"https://api.notion.com/v1/databases/{database_id}/query"
 
 payload = {"page_size": 200}
-token = ""
+token = secret.token
 headers = {
     "Accept": "application/json",
     "Authorization": "Bearer " + token,
@@ -18,7 +19,8 @@ response = requests.post(url, json=payload, headers=headers)
 
 json_loaded = json.loads(response.text)
 
-x = json_loaded['results'][0]['properties']['Task']['title'][0]['text']
+
+x = json_loaded['results'][0]['properties']
 y = [json_loaded['results'][t]['properties']['Task']['title'][0]['text']["content"] for t in range(len(json_loaded["results"])-1)]
 #print(x)
 
