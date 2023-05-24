@@ -74,18 +74,7 @@ def get_clipboard():
     return clipboard.paste()
 
 
-if __name__ =="__main__":
-
-    
-
-    
-    text_in_Block = text_in_Block.lower()
-    
-    if text_in_Block.startswith("anki"): #anki mode
-        pass
-    else: #notion mode, default 
-
-        
+def standard_processing(text_in_Block):
         if text_in_Block.startswith("hr"):
             status = status_HR
             text_in_Block = text_in_Block[2:]
@@ -98,9 +87,6 @@ if __name__ =="__main__":
         else:
             status = status_general
             
-
-            
-    
         data = {
             "parent": { "database_id": secret.db_id},
             "properties": {
@@ -123,11 +109,29 @@ if __name__ =="__main__":
 
         response = requests.request("POST", url, headers=headers, data=data)
 
-        #if(response.status_code != 200):
-            #print(f"response: {response.status_code}")
-            #print(response.text)
-            #waiting = input()
+        if(response.status_code != 200):
+            print(f"response: {response.status_code}")
+            print(response.text)
+            waiting = input()
+        else:
+            print("200")
 
-        print(response)
+
+
+if __name__ =="__main__":
+
+    text_in_Block = text_in_Block.lower()
+    
+    if text_in_Block.startswith("anki"): #anki mode
+        pass
+    if text_in_Block.startswith("miro"): #miro mode
+        clipboard_text = get_clipboard()
+        splitted = clipboard_text.split("\n")
+        for line in splitted:
+            line = line.lower()
+            standard_processing(line)
+    else: #notion mode, default
+        standard_processing(text_in_Block)
+       
 
 
